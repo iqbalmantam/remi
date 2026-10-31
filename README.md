@@ -1,45 +1,41 @@
 # Remi Fotoku
 
-Game kartu remi di browser (HP maupun komputer) dengan foto sendiri di punggung kartu, As, J, Q, dan K. Satu file `index.html`, tanpa build, tanpa dependensi.
+Kumpulan permainan kartu remi di browser (HP maupun komputer) dengan foto sendiri di kartu. Satu file `index.html`, tanpa build.
 
-## Cara pasang di GitHub Pages
+## Pilihan permainan
 
-1. Buat repo baru, unggah `index.html` dan folder `foto/`.
-2. Settings → Pages → Source: branch `main`, folder `/ (root)`.
-3. Tunggu satu-dua menit, lalu buka `https://USERNAME.github.io/NAMA-REPO/`.
+| Permainan | Pemain | Ringkas | Skor ronde |
+|-----------|--------|---------|------------|
+| Remi Klasik | 2–4 | 7 kartu, ambil 1 buang 1, menang bila semua kartu jadi set/urutan | 10 + total poin sisa kartu lawan |
+| Remi Joker | 2–4 | Seperti Klasik + 2 Joker pengganti kartu apa saja | 10 + sisa poin lawan (Joker sisa = 15) |
+| Gin Remi | 2 | 10 kartu, **Ketuk** bila poin tak berpasangan ≤ 10 | Selisih poin; Gin (0) +25; disalip +25 untuk lawan |
+| Delapan Gila | 2–4 | Cocokkan angka/jenis; 8 ganti jenis, 2 = lawan ambil 2, As = lewati | Total nilai kartu sisa lawan (8 = 50, J/Q/K = 10, As = 1) |
 
-## Mengganti foto untuk semua pemain
+Semua permainan memakai skor kumulatif per pemain. Match selesai saat ada yang mencapai **100 poin** (ubah nilai `tg` pada objek `MODES` di `index.html`). Nilai kartu: As 1, 2–10 sesuai angka, J/Q/K 10.
 
-Taruh file gambar di folder `foto/` dengan nama persis berikut (format `.jpg`, `.jpeg`, `.png`, atau `.webp`):
+## Pasang di GitHub Pages
+
+Ganti `index.html` di repo dengan file ini, lalu commit. Pages memperbarui sendiri dalam 1–2 menit (refresh paksa bila masih tampilan lama).
+
+## Foto kartu
+
+Taruh gambar di folder `foto/` dengan nama persis berikut (`.jpg`, `.jpeg`, `.png`, atau `.webp`):
 
 | File | Dipakai untuk |
 |------|---------------|
 | `back` | punggung kartu |
-| `as` | kartu As |
-| `j` | kartu J |
-| `q` | kartu Q |
-| `k` | kartu K |
+| `as` | As |
+| `j` | J |
+| `q` | Q |
+| `k` | K |
+| `joker` | Joker (mode Remi Joker) |
 
-Contoh: `foto/back.jpg`, `foto/q.png`. File yang tidak ada akan tampil sebagai kartu klasik. Setelah commit, perubahan muncul bagi semua pemain (kalau belum berubah, refresh paksa karena cache browser).
+Slot kosong tampil sebagai kartu klasik. Saran ukuran: potret 5:7, misalnya 500×700 piksel, di bawah 300 KB.
 
-Saran ukuran: potret rasio 5:7, misalnya 500×700 piksel, di bawah 300 KB per file.
-
-## Panel Admin di dalam game
-
-Tombol **Admin** (PIN awal `1234`) dipakai untuk mencoba foto langsung dari galeri HP **hanya di perangkat itu**, berguna sebagai pratinjau sebelum kamu commit ke repo. Tombol **Reset** menghapus foto coba itu dan kembali ke foto dari repo.
-
-PIN hanya tersimpan di browser, jadi bukan pengaman sungguhan. Kontrol yang sebenarnya adalah siapa yang boleh commit ke repo. Untuk mengganti PIN bawaan, cari `'1234'` di fungsi `getPin` pada `index.html`.
+Tombol **Admin** (PIN awal `1234`) dipakai untuk mencoba foto dari galeri hanya di perangkat itu. PIN tersimpan di browser dan bukan pengaman sungguhan. Untuk mengganti PIN bawaan, cari `'1234'` di fungsi `getPin`.
 
 ## Multiplayer online
 
-Dari layar awal: satu orang menekan **Buat ruang online** dan mendapat kode 5 karakter. Teman memasukkan kode itu lalu menekan **Gabung**. Maksimal 4 pemain, dan tuan rumah bisa menambah Bot untuk mengisi kursi. Tuan rumah menekan **Mulai** saat semua sudah masuk.
+Pilih permainan, tekan **Buat ruang online**, lalu bagikan kode 5 karakter. Teman memasukkan kode dan menekan **Gabung**. Tuan rumah bisa menambah Bot, lalu menekan **Mulai**.
 
-Cara kerjanya: koneksi langsung antar-HP lewat WebRTC dengan [PeerJS](https://peerjs.com) (dimuat dari CDN jsDelivr, versi 1.5.4), jadi tidak perlu server sendiri dan GitHub Pages cukup. Tuan rumah memegang dek dan aturan; pemain lain hanya melihat kartunya sendiri. Catatan:
-
-- Tuan rumah harus tetap membuka halaman. Kalau tuan rumah keluar, permainan berakhir untuk semua. Kalau pemain lain keluar, posisinya diganti Bot.
-- Server perantara PeerJS gratis dan bersifat publik, tanpa jaminan layanan. Pada jaringan yang ketat (sebagian wifi kantor atau kampus) koneksi bisa gagal karena tidak ada server TURN.
-- Kode ruang hanya berlaku selama tuan rumah online.
-
-## Aturan main
-
-Masing-masing 7 kartu. Tiap giliran ambil 1 kartu (dari dek atau tumpukan buang), lalu buang 1. Menang bila 7 kartu tersisa terbagi jadi set (angka sama, 3–4 kartu beda jenis) atau urutan (satu jenis, berurutan, minimal 3). As bisa di bawah 2 atau di atas K.
+Koneksi langsung antar-HP lewat [PeerJS](https://peerjs.com) (jsDelivr, versi 1.5.4). Tuan rumah memegang dek dan aturan. Bila tuan rumah keluar, permainan berakhir; bila pemain lain keluar, posisinya diganti Bot. Server perantara PeerJS gratis tanpa jaminan layanan, dan jaringan yang ketat bisa menggagalkan koneksi.
