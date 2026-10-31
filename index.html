@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Remi Fotoku</title>
+<style>
+:root{--felt:#14604a;--felt2:#0e4636;--paper:#fbf8f1;--ink:#1d1b19;--red:#c0392b;--gold:#f2c14e;--txt:#f5f1e6;--panel:rgba(0,0,0,.3);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--felt:#0d3b2e;--felt2:#082a21;--paper:#efeadd}}
+:root[data-theme="dark"]{--felt:#0d3b2e;--felt2:#082a21;--paper:#efeadd}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:radial-gradient(circle at 50% 30%,var(--felt),var(--felt2));color:var(--txt);font-family:Georgia,"Times New Roman",serif;min-height:100vh;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:460px;margin:0 auto;padding:14px 12px 24px}
+h1{font-size:28px;margin:6px 0 4px;letter-spacing:.5px}
+p{line-height:1.45;margin:6px 0}
+.small{font-size:13px;opacity:.85}
+button{font:inherit;border:0;border-radius:12px;padding:12px 16px;background:var(--gold);color:#2a2100;font-weight:700;cursor:pointer}
+button.ghost{background:var(--panel);color:var(--txt)}
+button:disabled{opacity:.4}
+button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.slot{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:13px}
+.slot .card{width:100%}
+.slot label{cursor:pointer;background:var(--panel);border-radius:10px;padding:6px 10px;width:100%;text-align:center}
+.slot input{display:none}
+.card{position:relative;aspect-ratio:5/7;border-radius:8px;background:var(--paper);color:var(--ink);box-shadow:0 2px 5px rgba(0,0,0,.35);background-size:cover;background-position:center;overflow:hidden;user-select:none}
+.card.red{color:var(--red)}
+.card .c{position:absolute;left:5px;top:3px;font-size:15px;font-weight:700;line-height:1;text-align:center}
+.card .c i{display:block;font-style:normal;font-size:13px}
+.card .m{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px}
+.card.ph .c{background:rgba(255,255,255,.88);border-radius:5px;padding:2px 4px}
+.card.back{background-color:#7a1f2b;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.14) 0 4px,transparent 4px 9px);border:3px solid var(--paper)}
+.card.sel{transform:translateY(-12px);outline:3px solid var(--gold)}
+.card.empty{background:transparent;box-shadow:none;border:2px dashed rgba(255,255,255,.35)}
+#msg{min-height:44px;background:var(--panel);border-radius:12px;padding:10px 12px;font-size:15px;margin:8px 0}
+.row{display:flex;gap:8px;align-items:center}
+.mini{display:flex;gap:3px;margin:8px 0;min-height:44px}
+.mini .card{width:30px;border-radius:5px;border-width:2px}
+.table{display:flex;justify-content:center;gap:22px;margin:14px 0}
+.pile{width:84px;text-align:center;font-size:12px}
+.pile .card{margin-bottom:4px}
+.hand{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0 12px}
+.hand .card{width:100%}
+.bar{display:flex;gap:8px}
+.bar button{flex:1}
+#win.glow{animation:g 1s infinite alternate}
+@keyframes g{to{box-shadow:0 0 14px 3px var(--gold)}}
+@media (prefers-reduced-motion:reduce){#win.glow{animation:none;outline:3px solid #fff}}
+.hide{display:none}
+input[type=text],input[type=password]{flex:1;min-width:0;font:inherit;padding:11px;border-radius:12px;border:0;background:var(--paper);color:var(--ink)}
+#name{width:100%;flex:none;margin-top:8px}
+#code{text-transform:uppercase;letter-spacing:3px}
+#rcode{letter-spacing:4px;color:var(--gold)}
+.pl{background:var(--panel);border-radius:10px;padding:10px 12px;margin:6px 0}
+.opp{margin:6px 0;padding:4px 6px;border-radius:10px}
+.opp.turn{background:rgba(242,193,78,.22)}
+.mini .card .c{font-size:10px;left:2px;top:1px}.mini .card .c i{font-size:9px}.mini .card .m{font-size:14px}
+</style><script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+</head>
+<body><div class="wrap">
+
+<div id="home">
+<h1>Remi Fotoku</h1>
+<p>Kartu remi dengan foto kita sendiri. Main lawan Bot atau bareng teman secara online.</p>
+<input id="name" type="text" placeholder="Namamu" maxlength="12" autocomplete="off">
+<button id="solo" style="width:100%;margin-top:10px">Main lawan Bot</button>
+<button id="host" class="ghost" style="width:100%;margin-top:8px">Buat ruang online</button>
+<div class="row" style="margin-top:8px"><input id="code" type="text" placeholder="Kode ruang" maxlength="5" autocomplete="off" autocapitalize="characters"><button id="join">Gabung</button></div>
+<p id="homeErr" class="small"></p>
+<p class="small" style="margin-top:14px"><b>Cara main:</b> masing-masing 7 kartu. Tiap giliran ambil 1 kartu (dari dek atau tumpukan buang), lalu buang 1. Kamu menang bila 7 kartu tersisa terbagi jadi set (angka sama, 3–4 kartu beda jenis) atau urutan (satu jenis, berurutan, minimal 3). As bisa di bawah 2 atau di atas K.</p>
+<button class="ghost" id="adminBtn" style="width:100%;margin-top:14px">Admin</button>
+<div id="pinBox" class="hide row" style="margin-top:8px"><input id="pin" type="password" inputmode="numeric" placeholder="PIN admin" autocomplete="off"><button id="pinOk">Masuk</button></div>
+<p id="pinErr" class="small"></p>
+</div>
+
+<div id="lobby" class="hide">
+<h1>Ruang <span id="rcode"></span></h1>
+<p class="small" id="lobbyHint"></p>
+<div id="plist"></div>
+<div class="bar" style="margin-top:12px"><button id="addBot" class="ghost">Tambah Bot</button><button id="go">Mulai</button></div>
+<button class="ghost" id="leave" style="width:100%;margin-top:10px">Keluar</button>
+</div>
+
+<div id="setup" class="hide">
+<h1>Admin</h1>
+<p>Coba foto di perangkat ini saja. Untuk mengganti foto semua pemain, taruh file di folder foto/ pada repo GitHub (lihat README). Reset mengembalikan ke foto dari repo.</p>
+<div class="slots" id="slots"></div>
+<div class="row"><input id="newPin" type="password" inputmode="numeric" placeholder="PIN baru (4–8 angka)" autocomplete="off"><button id="pinSave" class="ghost">Ganti PIN</button></div>
+<p id="adminMsg" class="small"></p>
+<button id="done" style="width:100%;margin-top:8px">Selesai</button>
+</div>
+
+<div id="game" class="hide">
+<div class="row" style="justify-content:space-between"><span id="score" class="small"></span><button class="ghost" id="menu" style="padding:8px 12px">Keluar</button></div>
+<div id="opps"></div>
+<div class="table">
+<div class="pile"><div id="deck"></div>Dek</div>
+<div class="pile"><div id="disc"></div>Buangan</div>
+</div>
+<div id="msg"></div>
+<div class="hand" id="hand"></div>
+<div class="bar"><button id="drop">Buang kartu</button><button id="win">Remi!</button></div>
+<button class="ghost hide" id="again" style="width:100%;margin-top:10px">Main lagi</button>
+</div>
+
+</div>
+<script>
+var SU=['♠','♥','♦','♣'],RK=['','A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+var SLOTS=[['back','Punggung'],[1,'As'],[11,'J'],[12,'Q'],[13,'K']];
+var photos={};
+try{photos=JSON.parse(localStorage.getItem('remiFoto')||'{}')||{}}catch(e){photos={}}
+var repo={},FILES={back:'back',1:'as',11:'j',12:'q',13:'k'};
+function P(k){return photos[k]||repo[k]}
+function loadRepo(){Object.keys(FILES).forEach(function(k){var ex=['jpg','jpeg','png','webp'],i=0;(function t(){if(i>=ex.length)return;var im=new Image(),u='foto/'+FILES[k]+'.'+ex[i++];im.onload=function(){repo[k]=u;if(V)renderGame();renderSetup()};im.onerror=t;im.src=u})()})}
+function save(){try{localStorage.setItem('remiFoto',JSON.stringify(photos))}catch(e){}}
+function $(i){return document.getElementById(i)}
+
+function cardEl(c,cls){
+  var d=document.createElement('div');
+  if(!c){d.className='card back';if(P('back'))d.style.backgroundImage='url('+P('back')+')';if(cls)d.className+=' '+cls;return d}
+  d.className='card'+(c.s==1||c.s==2?' red':'')+(cls?' '+cls:'');
+  if(P(c.r)){d.style.backgroundImage='url('+P(c.r)+')';d.className+=' ph'}
+  d.innerHTML='<div class="c">'+RK[c.r]+'<i>'+SU[c.s]+'</i></div>'+(P(c.r)?'':'<div class="m">'+SU[c.s]+'</div>');
+  return d;
+}
+
+function renderSetup(){
+  var box=$('slots');box.innerHTML='';
+  SLOTS.forEach(function(s){
+    var w=document.createElement('div');w.className='slot';
+    var pv;
+    if(s[0]=='back')pv=cardEl(null);else pv=cardEl({r:s[0],s:s[0]==12?1:0});
+    var l=document.createElement('label');l.textContent=P(s[0])?'Ganti '+s[1]:'Foto '+s[1];
+    var inp=document.createElement('input');inp.type='file';inp.accept='image/*';
+    inp.onchange=function(){if(inp.files[0])loadPhoto(s[0],inp.files[0])};
+    l.appendChild(inp);w.appendChild(pv);w.appendChild(l);
+    if(photos[s[0]]){var x=document.createElement('button');x.className='ghost';x.style.cssText='padding:5px 10px;font-size:13px;width:100%';x.textContent='Reset';x.onclick=function(){delete photos[s[0]];save();renderSetup()};w.appendChild(x)}
+    box.appendChild(w);
+  });
+}
+function loadPhoto(slot,file){
+  var r=new FileReader();
+  r.onload=function(){var im=new Image();
+    im.onload=function(){
+      var c=document.createElement('canvas'),W=240,H=336;c.width=W;c.height=H;
+      var x=c.getContext('2d'),k=Math.max(W/im.width,H/im.height);
+      x.drawImage(im,(W-im.width*k)/2,(H-im.height*k)/2,im.width*k,im.height*k);
+      photos[slot]=c.toDataURL('image/jpeg',.72);save();renderSetup();
+    };im.src=r.result};
+  r.readAsDataURL(file);
+}
+
+/* ---------- aturan ---------- */
+function consec(a){a=a.slice().sort(function(x,y){return x-y});for(var i=1;i<a.length;i++)if(a[i]!=a[i-1]+1)return false;return true}
+function isMeld(g){
+  if(g.length<3)return false;
+  var sameR=g.every(function(c){return c.r==g[0].r});
+  if(sameR){var u={};g.forEach(function(c){u[c.s]=1});return g.length<=4&&Object.keys(u).length==g.length}
+  if(!g.every(function(c){return c.s==g[0].s}))return false;
+  var rs=g.map(function(c){return c.r});
+  return consec(rs)||(rs.indexOf(1)>-1&&consec(rs.map(function(r){return r==1?14:r})));
+}
+function canMeld(cs){
+  if(!cs.length)return true;if(cs.length<3)return false;
+  var f=cs[0],rest=cs.slice(1),n=rest.length;
+  for(var m=1;m<(1<<n);m++){
+    var g=[f],left=[];
+    for(var i=0;i<n;i++){if(m&(1<<i))g.push(rest[i]);else left.push(rest[i])}
+    if(g.length>=3&&isMeld(g)&&canMeld(left))return true;
+  }
+  return false;
+}
+function winIdx(h){
+  for(var i=0;i<h.length;i++){var r=h.filter(function(_,j){return j!=i});if(canMeld(r))return i}
+  return -1;
+}
+function util(c,h){
+  var u=0;h.forEach(function(o){if(o===c)return;
+    if(o.r==c.r)u+=2;
+    else if(o.s==c.s&&Math.abs(o.r-c.r)<=2)u+=1.5;});
+  return u;
+}
+
+/* ---------- multiplayer ---------- */
+var V=null,S=null,isHost=false,peer=null,conn=null,sel=-1,code='',bt=0;
+var AL='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function show(id){['home','lobby','setup','game'].forEach(k=>$(k).className=k==id?'':'hide')}
+function myName(){return($('name').value.trim()||'Pemain').slice(0,12)}
+function err(t){$('homeErr').textContent=t}
+function sortH(p){p.hand.sort((a,b)=>a.s-b.s||a.r-b.r)}
+function shuffle(d){for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]]}return d}
+function newState(){S={players:[{name:myName(),w:0,hand:[]}],deck:[],disc:[],turn:0,phase:'draw',over:false,started:false,log:'',winner:-1}}
+function cleanup(){const p=peer;peer=null;conn=null;clearTimeout(bt);if(p)p.destroy();S=null;V=null;isHost=false;show('home')}
+
+/* --- tuan rumah: logika permainan --- */
+function startGame(){
+  const d=[];for(let s=0;s<4;s++)for(let r=1;r<=13;r++)d.push({r,s});shuffle(d);
+  S.players.forEach(p=>{p.hand=d.splice(0,7);sortH(p)});
+  S.deck=d;S.disc=[S.deck.pop()];S.phase='draw';S.over=false;S.started=true;
+  S.turn=S.winner>=0?(S.winner+1)%S.players.length:0;S.log='Permainan dimulai.';
+  push();botMaybe();
+}
+function refill(){
+  if(S.deck.length||S.disc.length<2)return;
+  const top=S.disc.pop();S.deck=shuffle(S.disc);S.disc=[top];
+}
+function act(pi,a,i){
+  if(!S||S.over||pi!=S.turn)return;const p=S.players[pi];
+  if(S.phase=='draw'){
+    if(a=='deck'){refill();if(!S.deck.length)return;p.hand.push(S.deck.pop());S.log=p.name+' ambil dari dek.'}
+    else if(a=='disc'&&S.disc.length){p.hand.push(S.disc.pop());S.log=p.name+' ambil dari tumpukan buang.'}
+    else return;
+    S.phase='discard';
+  }else{
+    if(a=='drop'&&i>=0&&i<p.hand.length){
+      S.disc.push(p.hand.splice(i,1)[0]);sortH(p);
+      S.turn=(S.turn+1)%S.players.length;S.phase='draw';S.log=p.name+' membuang 1 kartu.';
+    }else if(a=='win'){
+      const w=winIdx(p.hand);if(w<0)return;
+      S.disc.push(p.hand.splice(w,1)[0]);sortH(p);p.w++;S.over=true;S.winner=pi;S.log=p.name+' menang! Remi 🎉';
+    }else return;
+  }
+  push();if(!S.over)botMaybe();
+}
+function botMaybe(){
+  clearTimeout(bt);
+  if(S&&S.started&&!S.over&&S.players[S.turn].bot)bt=setTimeout(botMove,900);
+}
+function botMove(){
+  if(!S||S.over)return;const p=S.players[S.turn];if(!p.bot)return;
+  if(S.phase=='draw'){
+    const top=S.disc[S.disc.length-1];
+    act(S.turn,top&&(winIdx(p.hand.concat([top]))>-1||util(top,p.hand)>=3)?'disc':'deck');
+  }else{
+    if(winIdx(p.hand)>-1){act(S.turn,'win');return}
+    let worst=0,wu=99;p.hand.forEach((c,i)=>{const u=util(c,p.hand);if(u<wu){wu=u;worst=i}});
+    act(S.turn,'drop',worst);
+  }
+}
+function viewFor(i){
+  const p=S.players[i];
+  return{names:S.players.map(x=>x.name),counts:S.players.map(x=>x.hand.length),wins:S.players.map(x=>x.w),
+    you:i,hand:p.hand,top:S.disc[S.disc.length-1]||null,deckN:S.deck.length,turn:S.turn,phase:S.phase,
+    over:S.over,log:S.log,reveal:S.over?S.players.map(x=>x.hand):null};
+}
+function push(){
+  S.players.forEach((p,i)=>{if(p.conn&&p.conn.open)p.conn.send({t:'view',v:viewFor(i)})});
+  V=viewFor(0);sel=-1;renderGame();
+}
+function lobbyPush(){
+  const names=S.players.map(p=>p.name+(p.bot?' (Bot)':''));
+  S.players.forEach(p=>{if(p.conn&&p.conn.open)p.conn.send({t:'lobby',names,code})});
+  renderLobby(names);
+}
+function renderLobby(names){
+  $('rcode').textContent=code;
+  const pl=$('plist');pl.innerHTML='';
+  names.forEach((n,i)=>{const d=document.createElement('div');d.className='pl';d.textContent=n+(i==0?' (tuan rumah)':'');pl.appendChild(d)});
+  $('addBot').className='ghost'+(isHost&&names.length<4?'':' hide');
+  $('go').className=isHost&&names.length>=2?'':'hide';
+  $('lobbyHint').textContent=isHost?'Bagikan kode ini ke temanmu. Maksimal 4 pemain.':'Menunggu tuan rumah memulai…';
+}
+function onHost(c,m){
+  if(!S)return;
+  if(m.t=='hello'){
+    if(S.started||S.players.length>=4){c.send({t:'full'});setTimeout(()=>c.close(),300);return}
+    S.players.push({name:String(m.name||'Pemain').slice(0,12),w:0,hand:[],conn:c});lobbyPush();
+  }else if(m.t=='act'){
+    const i=S.players.findIndex(p=>p.conn===c);if(i>-1)act(i,m.a,m.i);
+  }
+}
+function dropConn(c){
+  if(!S)return;const i=S.players.findIndex(p=>p.conn===c);if(i<0)return;
+  if(!S.started){S.players.splice(i,1);lobbyPush();return}
+  const p=S.players[i];p.bot=true;p.conn=null;p.name+=' (Bot)';
+  S.log=p.name+' keluar dan diganti Bot.';push();botMaybe();
+}
+function hostRoom(){
+  if(typeof Peer=='undefined'){err('Mode online butuh koneksi internet (PeerJS gagal dimuat).');return}
+  isHost=true;newState();
+  code=Array.from({length:5},()=>AL[Math.floor(Math.random()*AL.length)]).join('');
+  peer=new Peer('remi-'+code);
+  peer.on('open',()=>{err('');show('lobby');lobbyPush()});
+  peer.on('error',e=>{
+    if(e.type=='unavailable-id'){cleanup();hostRoom()}
+    else{err('Gagal membuat ruang: '+e.type);cleanup()}
+  });
+  peer.on('connection',c=>{c.on('data',m=>onHost(c,m));c.on('close',()=>dropConn(c))});
+}
+function solo(){isHost=true;newState();S.players.push({name:'Bot',w:0,hand:[],bot:true});show('game');startGame()}
+
+/* --- pemain lain --- */
+function joinRoom(){
+  if(typeof Peer=='undefined'){err('Mode online butuh koneksi internet (PeerJS gagal dimuat).');return}
+  const c=$('code').value.trim().toUpperCase();
+  if(c.length<5){err('Masukkan 5 karakter kode ruang.');return}
+  isHost=false;code=c;err('Menyambung…');
+  peer=new Peer();
+  peer.on('open',()=>{
+    const cn=conn=peer.connect('remi-'+c,{reliable:true});
+    const t=setTimeout(()=>{if(!cn.open){err('Ruang tidak ditemukan.');cleanup()}},9000);
+    cn.on('open',()=>{clearTimeout(t);cn.send({t:'hello',name:myName()})});
+    cn.on('data',onClient);
+    cn.on('close',()=>{if(peer){err('Koneksi terputus.');cleanup()}});
+  });
+  peer.on('error',e=>{err(e.type=='peer-unavailable'?'Ruang tidak ditemukan.':'Gagal tersambung: '+e.type);cleanup()});
+}
+function onClient(m){
+  if(m.t=='lobby'){err('');code=m.code;show('lobby');renderLobby(m.names)}
+  else if(m.t=='view'){V=m.v;sel=-1;if($('game').className!='')show('game');renderGame()}
+  else if(m.t=='full'){err('Ruang penuh atau permainan sudah dimulai.');cleanup()}
+}
+function send(a,i){if(isHost)act(0,a,i);else if(conn&&conn.open)conn.send({t:'act',a,i})}
+
+/* --- tampilan --- */
+function renderGame(){
+  const v=V,my=v.turn==v.you&&!v.over,P=v.phase;
+  $('score').textContent=v.names.map((n,i)=>n+' '+v.wins[i]).join(' · ');
+  const o=$('opps');o.innerHTML='';
+  v.names.forEach((n,i)=>{
+    if(i==v.you)return;
+    const d=document.createElement('div');d.className='opp'+(v.turn==i&&!v.over?' turn':'');
+    const t=document.createElement('div');t.className='small';t.textContent=n+' · '+v.counts[i]+' kartu';d.appendChild(t);
+    const m=document.createElement('div');m.className='mini';
+    (v.reveal?v.reveal[i].map(c=>cardEl(c)):Array.from({length:v.counts[i]},()=>cardEl(null))).forEach(e=>m.appendChild(e));
+    d.appendChild(m);o.appendChild(d);
+  });
+  const dk=$('deck');dk.innerHTML='';
+  const de=cardEl(null,v.deckN?'':'empty');de.onclick=()=>{if(my&&P=='draw')send('deck')};dk.appendChild(de);
+  const ds=$('disc');ds.innerHTML='';
+  const te=v.top?cardEl(v.top):cardEl(null,'empty');te.onclick=()=>{if(my&&P=='draw'&&v.top)send('disc')};ds.appendChild(te);
+  const h=$('hand');h.innerHTML='';
+  v.hand.forEach((c,i)=>{
+    const e=cardEl(c,sel==i?'sel':'');
+    e.onclick=()=>{if(my&&P=='discard'){sel=sel==i?-1:i;renderGame()}};
+    h.appendChild(e);
+  });
+  const cw=my&&P=='discard'&&winIdx(v.hand)>-1;
+  $('win').disabled=!cw;$('win').className=cw?'glow':'';
+  $('drop').disabled=!(my&&P=='discard'&&sel>-1);
+  $('again').className='ghost'+(v.over&&isHost?'':' hide');
+  const hint=v.over?(isHost?'':'Menunggu tuan rumah memulai lagi.'):my?(P=='draw'?'Giliranmu. Ambil dari dek atau tumpukan buang.':(cw?'Kartumu lengkap! Tekan Remi!':'Pilih 1 kartu lalu tekan Buang kartu.')):'Giliran '+v.names[v.turn]+'.';
+  $('msg').textContent=(hint+' '+(v.log||'')).trim();
+}
+
+/* --- tombol & admin --- */
+function getPin(){try{return localStorage.getItem('remiPin')||'1234'}catch(e){return'1234'}}
+$('solo').onclick=solo;
+$('host').onclick=hostRoom;
+$('join').onclick=joinRoom;
+$('addBot').onclick=()=>{if(S&&S.players.length<4){S.players.push({name:'Bot '+S.players.length,w:0,hand:[],bot:true});lobbyPush()}};
+$('go').onclick=()=>{if(S&&S.players.length>=2){show('game');startGame()}};
+$('leave').onclick=cleanup;
+$('menu').onclick=cleanup;
+$('drop').onclick=()=>{if(sel>-1){const i=sel;sel=-1;send('drop',i)}};
+$('win').onclick=()=>send('win');
+$('again').onclick=()=>{if(isHost)startGame()};
+$('adminBtn').onclick=()=>{$('pinBox').className='row';$('pin').focus()};
+$('pinOk').onclick=()=>{
+  if($('pin').value===getPin()){$('pin').value='';$('pinBox').className='hide';$('pinErr').textContent='';renderSetup();show('setup')}
+  else $('pinErr').textContent='PIN salah.';
+};
+$('pinSave').onclick=()=>{
+  const v=$('newPin').value;
+  if(!/^\d{4,8}$/.test(v)){$('adminMsg').textContent='PIN harus 4–8 angka.';return}
+  try{localStorage.setItem('remiPin',v);$('adminMsg').textContent='PIN diganti.'}catch(e){$('adminMsg').textContent='PIN tidak bisa disimpan di perangkat ini.'}
+  $('newPin').value='';
+};
+$('done').onclick=()=>show('home');
+renderSetup();
+loadRepo();
+</script>
+</body></html>
