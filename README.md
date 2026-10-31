@@ -34,6 +34,14 @@ Slot kosong tampil sebagai kartu klasik. Saran ukuran: potret 5:7, misalnya 500�
 
 Tombol **Admin** (PIN awal `1234`) dipakai untuk mencoba foto dari galeri hanya di perangkat itu. PIN tersimpan di browser dan bukan pengaman sungguhan. Untuk mengganti PIN bawaan, cari `'1234'` di fungsi `getPin`.
 
+## Simpan foto ke GitHub dari panel Admin
+
+1. Di GitHub: Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token. Pilih *Only select repositories* → `remi`, izin **Contents: Read and write**, masa berlaku pendek (misalnya 30 hari).
+2. Di panel Admin tempel token, tekan **Simpan**, pilih foto, lalu tekan **Unggah foto ke GitHub**.
+3. Foto terunggah ke folder `foto/` dan muncul untuk semua pemain dalam 1–2 menit.
+
+Token hanya disimpan di browser perangkat itu, tidak ada di kode. Jangan dibagikan ke siapa pun dan jangan dipakai di perangkat bersama. Ganti `GH` di `index.html` bila nama repo berbeda.
+
 ## Multiplayer online
 
 Pilih permainan, tekan **Buat ruang online**, lalu bagikan kode 5 karakter. Teman memasukkan kode dan menekan **Gabung**. Tuan rumah bisa menambah Bot, lalu menekan **Mulai**.

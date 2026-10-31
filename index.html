@@ -100,6 +100,12 @@ input[type=text],input[type=password]{flex:1;min-width:0;width:100%;font:inherit
 <h2>Admin</h2>
 <p class="mut">Coba foto di perangkat ini saja. Untuk mengganti foto semua pemain, taruh file di folder foto/ pada repo GitHub (lihat README). Reset mengembalikan ke foto dari repo.</p>
 <div class="slots" id="slots"></div>
+<div class="rules"><b>Simpan ke GitHub</b>
+<p class="small">Token GitHub (fine-grained, izin Contents: Read and write, hanya untuk repo iqbalmantam/remi). Disimpan di browser ini saja.</p>
+<div class="row"><input id="tok" type="password" placeholder="github_pat_…" autocomplete="off"><button id="tokSave" class="ghost">Simpan</button><button id="tokDel" class="ghost">Hapus</button></div>
+<p id="tokMsg" class="small"></p>
+<button id="push" class="full">Unggah foto ke GitHub</button>
+<p id="ghMsg" class="small"></p></div>
 <div class="row"><input id="newPin" type="password" inputmode="numeric" placeholder="PIN baru (4–8 angka)" autocomplete="off"><button id="pinSave" class="ghost">Ganti PIN</button></div>
 <p id="adminMsg" class="small"></p>
 <button id="done" class="full">Selesai</button>
@@ -140,10 +146,10 @@ const val=c=>c.r?Math.min(c.r,10):15,cval=c=>c.r==8?50:Math.min(c.r,10);
 
 /* ---------- foto ---------- */
 let photos={};try{photos=JSON.parse(localStorage.getItem('remiFoto')||'{}')||{}}catch(e){}
-const repo={},FILES={back:'back',0:'joker',1:'as',11:'j',12:'q',13:'k'};
+const T=Math.floor(Date.now()/60000),hi={},repo={},FILES={back:'back',0:'joker',1:'as',11:'j',12:'q',13:'k'};
 const P=k=>photos[k]||repo[k];
 function save(){try{localStorage.setItem('remiFoto',JSON.stringify(photos))}catch(e){}}
-function loadRepo(){Object.keys(FILES).forEach(k=>{const ex=['jpg','jpeg','png','webp'];let i=0;(function t(){if(i>=ex.length)return;const im=new Image(),u='foto/'+FILES[k]+'.'+ex[i++];im.onload=()=>{repo[k]=u;if(V)renderGame();renderSetup()};im.onerror=t;im.src=u})()})}
+function loadRepo(){Object.keys(FILES).forEach(k=>{const ex=['jpg','jpeg','png','webp'];let i=0;(function t(){if(i>=ex.length)return;const im=new Image(),u='foto/'+FILES[k]+'.'+ex[i++]+'?t='+T;im.onload=()=>{repo[k]=u;if(V)renderGame();renderSetup()};im.onerror=t;im.src=u})()})}
 function cardEl(c,cls){
   const d=document.createElement('div');
   if(!c){d.className='card back'+(cls?' '+cls:'');if(P('back')&&cls!='empty')d.style.backgroundImage='url('+P('back')+')';return d}
@@ -160,17 +166,15 @@ function renderSetup(){
     const w=el('div','slot'),l=el('label','',(P(s[0])?'Ganti ':'Foto ')+s[1]),inp=el('input');
     inp.type='file';inp.accept='image/*';inp.onchange=()=>{if(inp.files[0])loadPhoto(s[0],inp.files[0])};
     l.appendChild(inp);w.append(s[0]=='back'?cardEl(null):cardEl({r:s[0],s:s[0]==12?1:0}),l);
-    if(photos[s[0]]){const x=el('button','ghost','Reset');x.style.cssText='padding:5px 10px;font-size:13px;width:100%';x.onclick=()=>{delete photos[s[0]];save();renderSetup()};w.appendChild(x)}
+    if(photos[s[0]]){const x=el('button','ghost','Reset');x.style.cssText='padding:5px 10px;font-size:13px;width:100%';x.onclick=()=>{delete photos[s[0]];delete hi[s[0]];save();renderSetup()};w.appendChild(x)}
     box.appendChild(w);
   });
 }
 function loadPhoto(slot,file){
   const r=new FileReader();
   r.onload=()=>{const im=new Image();im.onload=()=>{
-    const c=document.createElement('canvas'),W=240,H=336;c.width=W;c.height=H;
-    const x=c.getContext('2d'),k=Math.max(W/im.width,H/im.height);
-    x.drawImage(im,(W-im.width*k)/2,(H-im.height*k)/2,im.width*k,im.height*k);
-    photos[slot]=c.toDataURL('image/jpeg',.72);save();renderSetup();
+    const sc=(W,H,q)=>{const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d'),k=Math.max(W/im.width,H/im.height);x.drawImage(im,(W-im.width*k)/2,(H-im.height*k)/2,im.width*k,im.height*k);return c.toDataURL('image/jpeg',q)};
+    photos[slot]=sc(240,336,.72);hi[slot]=sc(500,700,.85);save();renderSetup();
   };im.src=r.result};
   r.readAsDataURL(file);
 }
@@ -475,6 +479,39 @@ $('pinSave').onclick=()=>{
   $('newPin').value='';
 };
 $('done').onclick=()=>show('home');
+const GH='iqbalmantam/remi';
+function tok(){try{return localStorage.getItem('remiTok')||''}catch(e){return''}}
+function tokUi(){$('tok').placeholder=tok()?'Token tersimpan (isi untuk mengganti)':'github_pat_…';$('tokMsg').textContent=tok()?'Token tersimpan di browser ini.':'Belum ada token.'}
+async function ghPut(slot,data){
+  const url='https://api.github.com/repos/'+GH+'/contents/foto/'+FILES[slot]+'.jpg';
+  const H={Authorization:'Bearer '+tok(),Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'};
+  for(let t=0;t<2;t++){
+    let sha;const g=await fetch(url,{headers:H,cache:'no-store'});
+    if(g.ok)sha=(await g.json()).sha;else if(g.status!=404)throw new Error(g.status);
+    const r=await fetch(url,{method:'PUT',headers:H,body:JSON.stringify({message:'Ganti foto '+FILES[slot],content:data.split(',')[1],sha})});
+    if(r.ok)return;
+    if(r.status!=409&&r.status!=422)throw new Error(r.status);
+  }
+  throw new Error('konflik');
+}
+$('tokSave').onclick=()=>{const v=$('tok').value.trim();if(!v)return;try{localStorage.setItem('remiTok',v)}catch(e){$('tokMsg').textContent='Token tidak bisa disimpan di perangkat ini.';return}$('tok').value='';tokUi()};
+$('tokDel').onclick=()=>{try{localStorage.removeItem('remiTok')}catch(e){}tokUi()};
+$('push').onclick=async()=>{
+  const m=$('ghMsg');
+  if(!tok()){m.textContent='Simpan token dulu.';return}
+  const ks=SLOTS.map(s=>s[0]).filter(k=>hi[k]||photos[k]);
+  if(!ks.length){m.textContent='Belum ada foto untuk diunggah. Pilih foto di atas dulu.';return}
+  $('push').disabled=true;
+  try{
+    for(let i=0;i<ks.length;i++){m.textContent='Mengunggah '+FILES[ks[i]]+' ('+(i+1)+'/'+ks.length+')…';await ghPut(ks[i],hi[ks[i]]||photos[ks[i]])}
+    m.textContent='Selesai. Foto muncul untuk semua pemain dalam 1–2 menit.';
+  }catch(e){
+    const c=e.message;
+    m.textContent=c=='401'?'Token ditolak atau sudah kedaluwarsa.':(c=='403'||c=='404')?'Token tidak punya izin tulis ke repo '+GH+'.':e instanceof TypeError?'Gagal tersambung ke GitHub.':'Gagal mengunggah ('+c+').';
+  }
+  $('push').disabled=false;
+};
+tokUi();
 renderModes();renderSetup();loadRepo();
 </script>
 </body></html>
